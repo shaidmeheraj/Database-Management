@@ -1,0 +1,374 @@
+Microsoft Windows [Version 10.0.26100.3476]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\shaid>sqlplus
+
+SQL*Plus: Release 10.2.0.1.0 - Production on Mon Mar 31 19:07:15 2025
+
+Copyright (c) 1982, 2005, Oracle.  All rights reserved.
+
+Enter user-name: system
+Enter password:
+
+Connected to:
+Oracle Database 10g Express Edition Release 10.2.0.1.0 - Production
+
+SQL> drop user a cascade;
+
+User dropped.
+
+SQL> drop user b cascade;
+drop user b cascade
+          *
+ERROR at line 1:
+ORA-01918: user 'B' does not exist
+
+
+SQL> create user a identified by a;
+
+User created.
+
+SQL> grant create session to a;
+
+Grant succeeded.
+
+SQL> create user b identified by b;
+
+User created.
+
+SQL> grant create session,create table,create view,create synonym to a;
+
+Grant succeeded.
+
+SQL> drop user a cascade;
+
+User dropped.
+
+SQL> drop user b cascade;
+
+User dropped.
+
+SQL> create user a identified by a;
+
+User created.
+
+SQL> grant create session to a;
+
+Grant succeeded.
+
+SQL> create user b identified by b;
+
+User created.
+
+SQL> grant create session,create table,create view,create synonym to b;
+
+Grant succeeded.
+
+SQL> connect b/b;\
+ERROR:
+ORA-01017: invalid username/password; logon denied
+
+
+Warning: You are no longer connected to ORACLE.
+SQL> connect b/b;
+Connected.
+SQL> connect  system/25809073
+Connected.
+SQL> alter user b
+  2  default tablespace users
+  3  quota 5m on users;
+
+User altered.
+
+SQL> connect b/b;
+Connected.
+SQL> create table c(
+  2  name varchar2(20),
+  3  age number);
+
+Table created.
+
+SQL> insert into c values ('meheraj',20);
+
+1 row created.
+
+SQL> insert into c values ('meheraj',23);
+
+1 row created.
+
+SQL> insert into c values ('meheraj',25);
+
+1 row created.
+
+SQL> select *from c;
+
+NAME                        AGE
+-------------------- ----------
+meheraj                      20
+meheraj                      23
+meheraj                      25
+
+SQL> grant select on c to a;
+
+Grant succeeded.
+
+SQL> grant insert on c to a;
+
+Grant succeeded.
+
+SQL> connect a/a;
+Connected.
+SQL> show user
+USER is "A"
+SQL> select *from b.c
+  2  ;
+
+NAME                        AGE
+-------------------- ----------
+meheraj                      20
+meheraj                      23
+meheraj                      25
+
+SQL> insert into b.c values ('masum',20);
+
+1 row created.
+
+SQL> insert into b.c values ('masum',25);
+
+1 row created.
+
+SQL> select *from b.c
+  2  ;
+
+NAME                        AGE
+-------------------- ----------
+meheraj                      20
+meheraj                      23
+meheraj                      25
+masum                        20
+masum                        25
+
+
+
+
+
+
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\shaid>sqlplus
+
+SQL*Plus: Release 10.2.0.1.0 - Production on Mon Mar 31 19:17:00 2025
+
+Copyright (c) 1982, 2005, Oracle.  All rights reserved.
+
+Enter user-name: system
+Enter password:
+
+Connected to:
+Oracle Database 10g Express Edition Release 10.2.0.1.0 - Production
+
+SQL> create profile a limit
+  2  failed_login_attempt 2
+  3  password_lock_time 1
+  4  password_life_time 2
+  5  password_grace_time 2
+  6  password_reuse_time 3
+  7  password_reuse_max 2
+  8  ;
+failed_login_attempt 2
+*
+ERROR at line 2:
+ORA-02376: invalid or redundant resource
+
+
+SQL> create profile a limit
+  2  failed_login_attempts 2
+  3  password_lock_time 1
+  4  password_life_time 2
+  5  password_grace_time 2
+  6  password_reuse_time 3
+  7  password_reuse_max 2
+  8  ;
+
+Profile created.
+
+SQL> create user a identified by a
+  2  create user a identified by a
+  3
+SQL>
+SQL> create user c identified by c
+  2  profile a;
+
+User created.
+
+SQL> grant create session to a;
+
+Grant succeeded.
+
+SQL> connect c/d;
+ERROR:
+ORA-01017: invalid username/password; logon denied
+
+
+Warning: You are no longer connected to ORACLE.
+SQL> connect c/r;
+ERROR:
+ORA-01017: invalid username/password; logon denied
+
+
+SQL> connect c/a;
+ERROR:
+ORA-28000: the account is locked
+
+
+SQL> connect c/c;
+ERROR:
+ORA-28000: the account is locked
+
+
+SQL> connect c/c;
+ERROR:
+ORA-01045: user C lacks CREATE SESSION privilege; logon denied
+
+
+SQL> show user
+USER is ""
+SQL> connect system/25809073
+Connected.
+SQL> connect c/c;
+ERROR:
+ORA-01045: user C lacks CREATE SESSION privilege; logon denied
+
+
+Warning: You are no longer connected to ORACLE.
+SQL> show user
+USER is ""
+SQL> connect c/c;
+ERROR:
+ORA-01045: user C lacks CREATE SESSION privilege; logon denied
+
+
+SQL> connect user/25809073;
+ERROR:
+ORA-01017: invalid username/password; logon denied
+
+
+SQL> connect system/25809073
+Connected.
+SQL>
+SQL>
+SQL> create profile a limit
+  2  password_life_time 2
+  3
+SQL>
+SQL> drop a;
+drop a
+     *
+ERROR at line 1:
+ORA-00950: invalid DROP option
+
+
+SQL> create profile k limit
+  2  failed_login_attempts 2
+  3  password_lock_time 1
+  4  password_grace_time 2
+  5  password_life_time 2
+  6  password_reuse_time 3
+  7  password_reuse_max 2
+  8  ;
+
+Profile created.
+
+SQL> create user g identified by g
+  2  profile k;
+
+User created.
+
+SQL> grant create session to g;
+
+Grant succeeded.
+
+SQL> connect g/g;
+Connected.
+SQL> connect g/k;
+ERROR:
+ORA-01017: invalid username/password; logon denied
+
+
+Warning: You are no longer connected to ORACLE.
+SQL> connect g/h;
+ERROR:
+ORA-01017: invalid username/password; logon denied
+
+
+SQL> connect g/j;
+ERROR:
+ORA-28000: the account is locked
+
+
+SQL> connect g/g;
+Connected.
+SQL> connect g/g;
+ERROR:
+ORA-28002: the password will expire within 2 days
+
+
+Connected.
+SQL> connect g/g;
+ERROR:
+ORA-28001: the password has expired
+
+
+Changing password for g
+New password:
+Retype new password:
+Password changed
+Connected.
+SQL> connect g/a;
+Connected.
+SQL> password
+Changing password for G
+Old password:
+New password:
+Retype new password:
+Password changed
+SQL> password
+Changing password for G
+Old password:
+New password:
+Retype new password:
+Password changed
+SQL> password
+Changing password for G
+Old password:
+New password:
+Retype new password:
+Password changed
+SQL> connect g/f;
+Connected.
+SQL> password
+Changing password for G
+Old password:
+New password:
+Retype new password:
+ERROR:
+ORA-28007: the password cannot be reused
+
+
+Password unchanged
+SQL> password
+Changing password for G
+Old password:
+New password:
+Retype new password:
+Password changed
+SQL> connect g/s;
+Connected.
+
+
+
+SQL> alter profile k limit
+  2  password_reuse_max unlimited
+  3  password_reuse_time 3;
+
+Profile altered.
