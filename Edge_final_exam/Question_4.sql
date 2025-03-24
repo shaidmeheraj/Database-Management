@@ -3,9 +3,9 @@ and Insert data into BOOKSHELF table where Rating will be one attribute.
  Create a row-level BEFORE UPDATE trigger which will be executed 
  only if the Rating value is updated to BOOKSHELF table.*/
 
-Enter user-name: system
-Enter password:
-Last Successful login time: Sun Feb 09 2025 12:27:33 +06:00
+-- Enter user-name: system
+-- Enter password:
+-- Last Successful login time: Sun Feb 09 2025 12:27:33 +06:00
 
 
 
