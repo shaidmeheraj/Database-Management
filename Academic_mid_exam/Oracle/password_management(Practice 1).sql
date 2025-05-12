@@ -1,4 +1,4 @@
--- all code are run in command prompt
+ -- all code are run in command prompt
 create profile me limit
   2  failed_login_attempts 2
   3  password_lock_time 1
