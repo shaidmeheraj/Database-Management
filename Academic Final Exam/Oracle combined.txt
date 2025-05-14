@@ -1,0 +1,439 @@
+-- Trigger Management
+
+ --   1. Create a table named BOOKSHELF_AUDIT, also create a table named BOOKSHELF 
+ --   and Insert data into BOOKSHELF table where Rating will be one attribute. 
+ --   Create a row-level BEFORE UPDATE trigger which will be executed only if the Rating value is updated to BOOKSHELF table. 											
+
+-- Drop tables if it exists
+drop table bookshelf_audit;
+drop table bookshelf;
+drop table bookshelft_stats;
+
+-- Create the audit table to store changes in ratings
+create table bookshelf_audit (
+   title        varchar2(100),
+   publisher    varchar2(20),
+   categoryname varchar2(20),
+   old_rating   varchar2(2),
+   new_rating   varchar2(2),
+   audit_date   date
+);
+
+-- Select all records from the audit table
+select *
+  from bookshelf_audit;
+
+-- Create the main bookshelf table
+create table bookshelf (
+   title        varchar2(100),
+   publisher    varchar2(20),
+   categoryname varchar2(20),
+   rating       varchar2(2)
+);
+
+-- Select all records from the bookshelf table
+select *
+  from bookshelf;
+
+-- Create a row-level trigger to audit changes in the rating column
+create or replace trigger bookshelf_bef_upd_row before
+   update on bookshelf
+   for each row
+   when (( new.rating < old.rating ) OR ( new.rating > old.rating ))
+begin
+   insert into bookshelf_audit (
+      title,
+      publisher,
+      categoryname,
+      old_rating,
+      new_rating,
+      audit_date
+   ) values ( :old.title,
+              :old.publisher,
+              :old.categoryname,
+              :old.rating,
+              :new.rating,
+              sysdate );
+end;
+/
+
+-- Test the trigger by inserting records into the bookshelf table
+insert into bookshelf values ( 'The Hobbit',
+                               'Houghton Mifflin',
+                               'Fantasy',
+                               'B' );
+
+insert into bookshelf values ( 'The old man and the sea',
+                               'Ernest Hemingway',
+                               'Tragedy',
+                               'C' );
+
+commit;
+
+-- Select all records from the bookshelf table
+select *
+  from bookshelf;
+
+-- Update a record to trigger the row-level trigger
+UPDATE bookshelf
+   SET rating = 'D'
+   where title = 'The old man and the sea';
+
+-- Select all records from the audit table to verify the trigger
+select *
+    from bookshelf_audit;
+
+-- Create another table to store statement-level trigger actions
+CREATE TABLE bookshelft_stats (
+   action       varchar2(20),
+   action_date  date
+);
+
+-- Create a statement-level trigger to log update actions
+CREATE OR REPLACE TRIGGER bookshelf_bef_upd_stmt
+   BEFORE UPDATE ON bookshelf 
+BEGIN
+   INSERT INTO bookshelft_stats (
+      action,
+      action_date
+   ) VALUES ( 'UPDATE',
+              sysdate );
+END;
+/   
+
+-- Update multiple rows to trigger both row-level and statement-level triggers
+UPDATE bookshelf
+   SET rating = 'E';
+
+-- Select all records from the audit table to verify the row-level trigger
+SELECT *
+  FROM bookshelf_audit;
+
+-- Select all records from the stats table to verify the statement-level trigger
+select * 
+  from bookshelft_stats;
+
+
+
+
+
+
+-- Project Password Management
+-- 1. 
+--     a. Create a PROFILE named Password_Management where PASSWORD LIFE TIME will be 10 days, 
+--        PASSWORD GRACE TIME will be 8 days, PASSWORD REUSE MAX will be 3, PASSWORD LOCK TIME will be for 1 day, 
+--        FAILED LOGIN ATTEMPTS for 2 times, PASSWORD REUSE TIME 10 days. Prove each profile by appropriate 
+--        comment execution. Submit the consequent execution comment in text file. Also show the comment for 
+--        showing your created profile.   							
+--     b. To prevent a password from being reused, you can use one of two profile parameters: PASSWORD_REUSE_MAX 
+--        or PASSWORD_REUSE_TIME. ‘These two parameters are mutually exclusive; if you set a value for one of them, 
+--        the other must not be set to UNLIMITED’ - justify the statement.
+
+-- a. Create the PROFILE named Password_Management
+CREATE PROFILE c##Password_Management 
+LIMIT 
+    PASSWORD_LIFE_TIME 10 
+    PASSWORD_GRACE_TIME 8 
+    PASSWORD_LOCK_TIME 1
+    FAILED_LOGIN_ATTEMPTS 2
+    PASSWORD_REUSE_TIME 10;
+    PASSWORD_REUSE_MAX 3 
+ALTER USER c##Tester ACCOUNT UNLOCK;
+
+CREATE USER c##Tester IDENTIFIED BY 12345 PROFILE c##Password_Management;
+GRANT CREATE SESSION TO c##Tester;
+
+CONNECT c##Tester/12345;
+
+-- trying wrong password
+CONNECT c##Tester/1;
+-- ERROR:
+-- ORA-01017: invalid credential or not authorized; logon denied
+-- Help: https://docs.oracle.com/error-help/db/ora-01017/
+CONNECT c##Tester/2;
+-- ERROR:
+-- ORA-01017: invalid credential or not authorized; logon denied
+-- Help: https://docs.oracle.com/error-help/db/ora-01017/
+
+
+-- account locked if we try once more
+CONNECT c##Tester/2;
+-- ERROR:
+-- ORA-28000: The account is locked; login denied.
+-- Help: https://docs.oracle.com/error-help/db/ora-28000/
+
+-- PASSWORD_LOCK_TIME check
+-- we can wait 1 day to unlock the account
+-- connect to the user
+CONNECT c##Tester/12345;
+
+-- PASSWORD_LIFE_TIME check
+-- we can jump to 10 days in future
+-- connect to the user
+CONNECT c##Tester/12345;
+
+-- checking PASSWORD_REUSE_MAX and PASSWORD_REUSE_TIME
+ALTER USER c##Tester IDENTIFIED BY 1; -- we can't use the same password again
+ALTER USER c##Tester IDENTIFIED BY 2; 
+ALTER USER c##Tester IDENTIFIED BY 3; 
+ALTER USER c##Tester IDENTIFIED BY 4;
+
+-- After 10 days we can use the same password again
+ALTER USER c##Tester IDENTIFIED BY 1; 
+
+--     b. To prevent a password from being reused, you can use one of two profile parameters: PASSWORD_REUSE_MAX 
+--        or PASSWORD_REUSE_TIME. ‘These two parameters are mutually exclusive; if you set a value for one of them, 
+--        the other must not be set to UNLIMITED’ - justify the statement.
+
+connect system/1234;
+alter profile c##Password_Management limit
+    PASSWORD_REUSE_MAX 2
+    PASSWORD_REUSE_TIME UNLIMITED;
+
+ALTER USER c##Tester IDENTIFIED BY 12345;
+
+
+
+
+show user;
+
+drop PROFILE C##LIMITED_WITH_TIME cascade;
+
+drop USER C##MHN cascade;
+
+CREATE PROFILE C##LIMITED_WITH_TIME LIMIT
+    FAILED_LOGIN_ATTEMPTS 3
+    PASSWORD_LOCK_TIME 1
+    ;
+
+CREATE USER C##MHN IDENTIFIED BY mhn;
+
+GRANT CREATE SESSION TO C##MHN;
+
+ALTER USER c##MHN PROFILE c##LIMITED_WITH_TIME;
+
+-- manually unlock
+ALTER USER c##MHN ACCOUNT UNLOCK;
+
+-- altering profile
+ALTER PROFILE C##LIMITED_WITH_TIME LIMIT
+    PASSWORD_LIFE_TIME 100
+    PASSWORD_GRACE_TIME 8
+    PASSWORD_REUSE_MAX 1
+    PASSWORD_REUSE_TIME UNLIMITED
+    ;
+
+select * FROM USER_USERS;
+commit;
+
+ALTER USER c##MHN IDENTIFIED BY aaa;
+ALTER USER c##MHN IDENTIFIED BY bbb;
+ALTER USER c##MHN IDENTIFIED BY ccc;
+
+ALTER USER c##MHN IDENTIFIED BY mhn;
+
+
+
+
+
+
+
+
+-- 1. Create a user named Person2, 
+--    give password 1234, give privilege CREATE SESSION to Person2; 
+--    Create another user named Person1, give password 5678, give privilege CREATE SESSION, 
+--    CREATE TABLE, CREATE VIEW, CREATE SYNONYM to Person1; create a table named NEWSPAPER under user Person1, 
+--    insert data into NEWSPAPER table as user Person1, give privileges SELECT, insert ON NEWSPAPER table TO Person2 from user Person1; 
+--    Show NEWSPAPER table and insert data into NEWSPAPER table from user Person2. 
+
+
+
+
+SQL> drop user C##Person1 cascade;
+
+
+
+SQL> drop user C##Person2 cascade;
+
+
+
+SQL> create user C##Person2 identified by c12;
+
+
+
+SQL> grant CREATE SESSION to C##Person2;
+
+
+
+SQL> create user C##Person1 identified by c5;
+
+
+
+SQL>  grant CREATE SESSION, CREATE TABLE, CREATE VIEW,
+     CREATE SYNONYM to C##Person1;
+
+
+
+SQL> alter user C##Person1
+    default tablespace users
+    quota 5m on users;
+
+
+
+SQL> connect C##Person1/5678;
+
+SQL> create table NEWSPAPER (
+    Feature      VARCHAR2(15) not null,
+    Section      CHAR(1),
+    Page         NUMBER
+    );
+
+
+
+SQL>
+SQL> insert into NEWSPAPER values ('National News', 'A', 1);
+
+
+
+SQL> insert into NEWSPAPER values ('Sports', 'D', 1);
+
+
+
+SQL> insert into NEWSPAPER values ('Editorials', 'A', 12);
+
+
+
+SQL> insert into NEWSPAPER values ('Business', 'E', 1);
+
+
+
+SQL> insert into NEWSPAPER values ('Weather', 'C', 2);
+
+
+
+SQL> insert into NEWSPAPER values ('Television', 'B', 7);
+
+
+
+SQL> insert into NEWSPAPER values ('Births', 'F', 7);
+
+
+
+SQL> insert into NEWSPAPER values ('Classified', 'F', 8);
+
+
+
+SQL> insert into NEWSPAPER values ('Modern Life', 'B', 1);
+
+
+
+SQL> insert into NEWSPAPER values ('Comics', 'C', 4);
+
+
+
+SQL> insert into NEWSPAPER values ('Movies', 'B', 4);
+
+
+
+SQL> insert into NEWSPAPER values ('Bridge', 'B', 2);
+
+
+
+SQL> insert into NEWSPAPER values ('Obituaries', 'F', 6);
+
+
+
+SQL> insert into NEWSPAPER values ('Doctor Is In', 'F', 6);
+
+
+
+SQL> select * from newspaper;
+
+FEATURE         S       PAGE
+--------------- - ----------
+National News   A          1
+Sports          D          1
+Editorials      A         12
+Business        E          1
+Weather         C          2
+Television      B          7
+Births          F          7
+Classified      F          8
+Modern Life     B          1
+Comics          C          4
+Movies          B          4
+
+FEATURE         S       PAGE
+--------------- - ----------
+Bridge          B          2
+Obituaries      F          6
+Doctor Is In    F          6
+
+
+
+SQL> GRANT SELECT ON NEWSPAPER TO C##Person2;
+
+
+
+SQL> connect C##Person2/c12;
+
+SQL> select * from C##Person1.NEWSPAPER;
+
+FEATURE         S       PAGE
+--------------- - ----------
+National News   A          1
+Sports          D          1
+Editorials      A         12
+Business        E          1
+Weather         C          2
+Television      B          7
+Births          F          7
+Classified      F          8
+Modern Life     B          1
+Comics          C          4
+Movies          B          4
+
+FEATURE         S       PAGE
+--------------- - ----------
+Bridge          B          2
+Obituaries      F          6
+Doctor Is In    F          6
+
+
+
+SQL> connect C##Person1/c5;
+
+SQL> GRANT INSERT ON NEWSPAPER TO C##Person2;
+
+
+
+SQL> connect C##Person2/c12;
+
+SQL> insert into C##Person1.NEWSPAPER values ('National News', 'A', 1);
+
+
+
+SQL> select * from C##Person1.Newspaper;
+
+FEATURE         S       PAGE
+--------------- - ----------
+National News   A          1
+Sports          D          1
+Editorials      A         12
+Business        E          1
+Weather         C          2
+Television      B          7
+Births          F          7
+Classified      F          8
+Modern Life     B          1
+Comics          C          4
+Movies          B          4
+
+FEATURE         S       PAGE
+--------------- - ----------
+Bridge          B          2
+Obituaries      F          6
+Doctor Is In    F          6
+National News   A          1
+
+15 rows selected.
