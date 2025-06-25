@@ -1,0 +1,341 @@
+Find the names of those departments whose budget is higher than that of Astronomy. List them in alphabetic order.
+// Some code
+
+select dept_name from department 
+where budget > ( select budget from department where dept_name = 'Astronomy');
+
+2: Display a list of all instructors, showing each instructor’s ID and the number of sections taught. Make sure to show the number of sections as 0 for instructors who have not taught any section.
+// Some code
+select i.id , count(t.id) as c
+from instructor as i left join teaches as t
+on i.id = t.id 
+group by i.id
+order by c;
+
+3: For each student who has retaken a course at least twice (i.e., the student has taken the course at least three times), show the course ID and the student’s ID. Please display your results in order of course ID and do not display duplicate rows.
+
+select distinct course_id, ID
+	from takes
+    group by ID, course_id having count(*) > 2
+    order by course_id;
+
+
+4 Find the names of Biology students who have taken at least 3 Accounting courses.
+
+SELECT s.name
+FROM student as s
+JOIN takes as t ON s.ID = t.ID
+JOIN course as c ON t.course_id = c.course_id
+WHERE s.dept_name = 'Biology'
+AND c.dept_name = 'Accounting'
+GROUP BY s.ID, s.name
+HAVING COUNT(*) > 2;
+
+5:Find the sections that had maximum enrollment in Fall 2010.
+
+select top 1 course_id, sec_id 
+from takes
+WHERE semester = 'Fall' AND year = 2010
+group by course_id, sec_id
+order by count(*) desc;
+
+6: Find student names and the number of law courses taken for students who have taken at least half of the available law courses. (These courses are named things like ‘Tort Law’ or ‘Environmental Law’).
+
+SELECT st.name, COUNT(*) AS course_count
+FROM student AS st
+JOIN takes AS tt ON st.ID = tt.ID
+WHERE tt.course_id IN (
+    SELECT course_id
+    FROM course
+    WHERE title LIKE '%Law%'
+)
+GROUP BY st.ID, st.name
+HAVING COUNT(*) > (
+    SELECT COUNT(*) / 2.0
+    FROM course
+    WHERE title LIKE '%Law%'
+);
+
+7: 
+
+
+Problem set 2
+
+1 Find out the ID and salary of the instructors.
+
+select ID, salary from instructor;
+
+2 Find out the ID and salary of the instructor who gets more than $85,000.
+
+select ID, salary from instructor
+where salary > 85000;
+
+3  Find out the department names and their budget at the university.
+
+select dept_name, budget from department;
+
+4  List out the names of the instructors from Computer Science who have more than $70,000.
+
+select name from instructor where dept_name='Comp. Sci' and salary>70000;
+
+5:For all instructors in the university who have taught some course, find their names and the course ID of all courses they taught.
+
+SELECT I.name, T.course_id
+FROM instructor AS I
+INNER JOIN teaches AS T ON I.ID = T.ID
+ORDER BY I.name;
+
+6:  Find the names of all instructors whose salary is greater than at least one instructor in the Biology department.
+
+select distinct T.name from instructor as T, instructor as S where T.salary>S.salary and S.dept_name='Biology';
+
+7:Find the advisor of the student with ID 12345
+
+select * from advisor
+where s_ID = 12345;
+
+8: Find the average salary of all instructors.
+
+select avg(salary)from instructor;
+
+9: Find the names of all departments whose building name includes the substring ‘Watson’.
+
+select dept_name from department
+where building like "%Watson%";
+
+
+10:Find the names of instructors with salary amounts between 90,000and100,000.
+
+select name from instructor where salary between 90000 and 100000;
+
+11 Find the instructor names and the courses they taught for all instructors in the Biology department who have taught some course.
+
+SELECT instructor.name, teaches.course_id
+FROM instructor
+LEFT JOIN teaches ON instructor.ID = teaches.ID
+WHERE instructor.dept_name = 'Biology';
+
+12 Find the courses taught in Fall-2009 semester.
+
+select course_id from teaches
+where semester = 'Fall' and year = 2009;
+
+13 Find the set of all courses taught either in Fall-2009 or in Spring-2010.
+
+select course_id from teaches
+where (semester = 'Fall' and year = 2009) or (semester = 'Spring' and year = 2010);
+ 
+( select course_id from teaches
+where semester = 'Fall' and year = 2009 )
+union ( select course_id from teaches
+where semester = 'Spring' and year = 2010 );
+
+14 Find the set of all courses taught in the Fall-2009 as well as in Spring-2010.
+
+select course_id from teaches
+where (semester = 'Fall' and year = 2009) and (semester = 'Spring' and year = 2010);
+ 
+( select course_id from teaches
+where semester = 'Fall' and year = 2009 )
+intersect ( select course_id from teaches
+where semester = 'Spring' and year = 2010 );
+
+15 Find all courses taught in the Fall-2009 semester but not in the Spring-2010 semester.
+
+select course_id from teaches
+where (semester = 'Fall' and year = 2009) and not (semester = 'Spring' and year = 2010);
+ 
+( select course_id from teaches
+where semester = 'Fall' and year = 2009 )
+except ( select course_id from teaches
+where semester = 'Spring' and year = 2010 );
+
+16 Find all instructors who appear in the instructor relation with null values for salary.
+
+select * from instructor
+where salary = NULL;
+
+17 Find the average salary of instructors in the Finance department.
+
+select avg(salary) as avg_salary from instructor where dept_name ='Finance';
+
+18 Find the total number of instructors who teach a course in the Spring-2010 semester.
+
+select count(distinct ID)
+from teaches where semester='Spring' and year=2010;
+
+19  Find the average salary in each department.
+
+select dept_name, avg(salary) as avg_salary from instructor 
+group by dept_name;
+
+20  Find the number of instructors in each department who teach a course in the Spring-2010 semester.
+
+ select instructor.dept_name , count(distinct instructor.ID) as instr_count from instructor inner join  teaches 
+ on instructor.ID=teaches.ID and semester='Spring' and year=2010
+ group by dept_name;
+
+21. List out the departments where the average salary of the instructors is more than $42,000.
+
+select distinct dept_name
+from instructor
+group by dept_name
+having avg(salary) > 42000;
+
+22.For each course section offered in 2009, find the average total credits (tot cred) of all students enrolled in the section, if the section had at least 2 students.
+
+select course_id, sec_id, avg(tot_cred)
+from takes inner join student on year=2009
+group by course_id, sec_id
+having count(*)>1;
+
+23.Find all the courses taught in both the Fall-2009 and Spring-2010 semesters.
+
+select course_id from teaches
+where (semester = 'Fall' and year = 2009) and (semester = 'Spring' and year = 2010);
+ 
+( select course_id from teaches
+where semester = 'Fall' and year = 2009 )
+intersect ( select course_id from teaches
+where semester = 'Spring' and year = 2010 );
+24.
+
+Find all the courses taught in the Fall-2009 semester but not in the Spring-2010 semester.
+
+select course_id from teaches
+where (semester = 'Fall' and year = 2009) and not (semester = 'Spring' and year = 2010);
+ 
+( select course_id from teaches
+where semester = 'Fall' and year = 2009 )
+except ( select course_id from teaches
+where semester = 'Spring' and year = 2010 );
+
+25.Select the names of instructors whose names are neither ‘Mozart’ nor ‘Einstein’.
+
+select name from instructor
+where name not in ('Mozart', 'Einstein');
+
+26.
+
+27.
+
+28.
+
+29.
+
+30.Find all courses taught in both the Fall 2009 semester and in the Spring-2010 semester.
+
+select course_id from teaches
+where (semester = 'Fall' and year = 2009) and (semester = 'Spring' and year = 2010);
+ 
+( select course_id from teaches
+where semester = 'Fall' and year = 2009 )
+intersect ( select course_id from teaches
+where semester = 'Spring' and year = 2010 );
+
+31.
+
+32.Find all courses that were offered at most once in 2009.
+
+select course_id 
+from takes
+where year = 2009 
+group by course_id
+having count(*) = 1;
+
+33.Find all courses that were offered at least twice in 2009.
+
+select course_id 
+from takes
+where year = 2009 
+group by course_id
+having count(*) > 1;
+
+34.Find the average instructors’ salaries of those departments where the average salary is greater than $42,000.
+
+select distinct dept_name
+from instructor
+group by dept_name
+having avg(salary) > 42000;
+
+35.Find the maximum across all departments of the total salary at each department.
+
+SELECT TOP 1 SUM(i.salary) AS total_salary
+FROM department as d
+JOIN instructor as i ON d.dept_name = i.dept_name
+GROUP BY i.dept_name
+ORDER BY total_salary DESC;
+
+36.List all departments along with the number of instructors in each department.
+
+SELECT d.dept_name, COUNT(i.ID) AS instructor_count
+FROM department as d
+LEFT JOIN instructor as i ON d.dept_name = i.dept_name
+GROUP BY d.dept_name;
+
+
+
+Problem set 3
+
+1 Find the titles of courses in the Comp. Sci. department that have 3 credits.
+
+select title
+from course
+where dept_name = 'Comp. Sci.'
+and credits = 3;
+
+2  Find the IDs of all students who were taught by an instructor named Einstein; make sure there are no duplicates in the result.
+
+SELECT t.ID 
+FROM takes AS t
+JOIN teaches AS te
+    ON t.course_id = te.course_id
+    AND t.sec_id = te.sec_id
+    AND t.semester = te.semester
+    AND t.year = te.year 
+WHERE te.ID = (
+    SELECT ID 
+    FROM instructor
+    WHERE name = 'Einstein'
+);
+
+3Find the ID and name of each student who has taken at least one Comp. Sci. course; make sure there are no duplicate names in the result.
+
+SELECT DISTINCT student.ID, student.name
+FROM student
+JOIN takes ON student.ID = takes.ID
+WHERE takes.course_id IN (
+    SELECT course_id
+    FROM course 
+    WHERE dept_name = 'Comp. Sci.'
+);
+
+4Find the course id, section id, and building for each section of a Biology course.
+
+select section.course_id,section.sec_id,section.building from section join course on
+section.course_id=course.course_id where course.dept_name='Biology';
+
+5 Output instructor names sorted by the ratio of their salary to their department’s budget (in ascending order).
+
+SELECT instructor.name
+FROM instructor
+LEFT JOIN department ON instructor.dept_name = department.dept_name
+ORDER BY (instructor.salary / department.budget) ASC;
+
+
+6  Output instructor names and buildings for each building an instructor has taught in. Include instructor names who have not taught any classes (the building name should be NULL in this case).
+
+SELECT i.name, s.building
+FROM instructor i
+LEFT JOIN teaches t 
+    ON i.ID = t.ID
+LEFT JOIN section s 
+    ON t.course_id = s.course_id 
+    AND t.sec_id = s.sec_id 
+    AND t.semester = s.semester 
+    AND t.year = s.year;
+
+
+
+
+
